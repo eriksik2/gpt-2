@@ -22,10 +22,6 @@ from load_dataset import load_dataset, Sampler
 from accumulate import AccumulatingOptimizer
 import memory_saving_gradients
 
-CHECKPOINT_DIR = 'checkpoint'
-SAMPLE_DIR = 'samples'
-
-
 parser = argparse.ArgumentParser(
     description='Fine-tune GPT-2 on your custom dataset.',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -57,6 +53,9 @@ parser.add_argument('--val_batch_size', metavar='SIZE', type=int, default=2, hel
 parser.add_argument('--val_batch_count', metavar='N', type=int, default=40, help='Number of batches for validation.')
 parser.add_argument('--val_every', metavar='STEPS', type=int, default=0, help='Calculate validation loss every STEPS steps.')
 
+parser.add_argument('--checkpoint_dir', metavar='PATH', type=str, default='checkpoint', help='Directory where checkpoints are saved.')
+parser.add_argument('--sample_dir', metavar='PATH', type=str, default='samples', help='Directory where samples are saved.')
+
 
 def maketree(path):
     try:
@@ -73,28 +72,6 @@ def randomize(context, hparams, p):
     else:
         return context
 
-# Fine-tune GPT-2 on custom dataset
-# dataset: string               | Input file, directory, or glob pattern (utf-8 text, or preencoded .npz files)
-# model_name: string            | Pretrained model name
-# combine: number               | Concatenate input files with <|endoftext|> separator into chunks of this minimum size
-# batch_size: number            | Batch size
-# learning_rate: number         | Learning rate for Adam
-# accumulate_gradients: number  | Accumulate gradients across N minibatches
-# memory_saving_gradients: bool | Use gradient checkpointing to reduce vram usage
-# optimizer: string             | Optimizer. <adam|sgd>
-# noise: number                 | Add noise to input training data to regularize against typos
-# top_k: number                 | K for top-k sampling
-# top_p: number                 | P for top-p sampling. Overrides top_k if set > 0
-# restore_from: string          | Either "latest", "fresh", or a path to a checkpoint file
-# run_name: string              | Run id. Name of subdirectory in checkpoint/ and samples/
-# sample_every: number          | Generate samples every N steps
-# sample_length: number         | Sample this many tokens
-# sample_num: number            | Generate this many samples
-# save_every: number            | Write a checkpoint every N steps
-# val_dataset: string           | Dataset for validation loss, defaults to --dataset
-# val_batch_size: number        | Batch size for validation
-# val_batch_count: number       | Number of batches for validation
-# val_every: number             | Calculate validation loss every STEPS steps
 def train(dataset
          ,model_name = "117M"
          ,combine = 50000
@@ -116,7 +93,9 @@ def train(dataset
          ,val_dataset = ""
          ,val_batch_size = 2
          ,val_batch_count = 40
-         ,val_every = 0):
+         ,val_every = 0
+         ,checkpoint_dir = 'checkpoint'
+         ,sample_dir = 'samples'):
     enc = encoder.get_encoder(model_name)
     hparams = model.default_hparams()
     with open(os.path.join('models', model_name, 'hparams.json')) as f:
@@ -193,7 +172,7 @@ def train(dataset
         summaries = tf.summary.merge([summary_lr, summary_loss])
 
         summary_log = tf.summary.FileWriter(
-            os.path.join(CHECKPOINT_DIR, run_name))
+            os.path.join(checkpoint_dir, run_name))
 
         saver = tf.train.Saver(
             var_list=all_vars,
@@ -203,7 +182,7 @@ def train(dataset
 
         if restore_from == 'latest':
             ckpt = tf.train.latest_checkpoint(
-                os.path.join(CHECKPOINT_DIR, run_name))
+                os.path.join(checkpoint_dir, run_name))
             if ckpt is None:
                 # Get fresh GPT weights if new run.
                 ckpt = tf.train.latest_checkpoint(
@@ -232,7 +211,7 @@ def train(dataset
                            for _ in range(val_batch_count)]
 
         counter = 1
-        counter_path = os.path.join(CHECKPOINT_DIR, run_name, 'counter')
+        counter_path = os.path.join(checkpoint_dir, run_name, 'counter')
         if os.path.exists(counter_path):
             # Load the step number if we're resuming a run
             # Add 1 so we don't immediately try to save again
@@ -240,14 +219,14 @@ def train(dataset
                 counter = int(fp.read()) + 1
 
         def save():
-            maketree(os.path.join(CHECKPOINT_DIR, run_name))
+            maketree(os.path.join(checkpoint_dir, run_name))
             print(
                 'Saving',
-                os.path.join(CHECKPOINT_DIR, run_name,
+                os.path.join(checkpoint_dir, run_name,
                              'model-{}').format(counter))
             saver.save(
                 sess,
-                os.path.join(CHECKPOINT_DIR, run_name, 'model'),
+                os.path.join(checkpoint_dir, run_name, 'model'),
                 global_step=counter)
             with open(counter_path, 'w') as fp:
                 fp.write(str(counter) + '\n')
@@ -268,9 +247,9 @@ def train(dataset
                     all_text.append(text)
                     index += 1
             print(text)
-            maketree(os.path.join(SAMPLE_DIR, run_name))
+            maketree(os.path.join(sample_dir, run_name))
             with open(
-                    os.path.join(SAMPLE_DIR, run_name,
+                    os.path.join(sample_dir, run_name,
                                  'samples-{}').format(counter), 'w') as fp:
                 fp.write('\n'.join(all_text))
 
