@@ -2,7 +2,7 @@
 # Usage:
 #  ./train --dataset <file|directory|glob>
 # or
-#  from train import train
+#  import train
 #  train.train(dataset = <file|directory|glob>)
 
 import argparse
