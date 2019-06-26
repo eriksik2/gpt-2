@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # Usage:
-#  PYTHONPATH=src ./train --dataset <file|directory|glob>
+#  ./train --dataset <file|directory|glob>
+# or
+#  from train import train
+#  train.train(dataset = <file|directory|glob>)
 
 import argparse
 import json
@@ -11,6 +14,8 @@ import time
 import tqdm
 from tensorflow.core.protobuf import rewriter_config_pb2
 
+# Local imports
+sys.path.append('src')
 import model, sample, encoder
 from load_dataset import load_dataset, Sampler
 from accumulate import AccumulatingOptimizer
