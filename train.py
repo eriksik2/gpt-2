@@ -20,7 +20,7 @@ sys.path.append('src')
 import model, sample, encoder
 from load_dataset import load_dataset, Sampler
 from accumulate import AccumulatingOptimizer
-import memory_saving_gradients
+import memory_saving_gradients as msg
 
 parser = argparse.ArgumentParser(
     description='Fine-tune GPT-2 on your custom dataset.',
@@ -161,7 +161,7 @@ def train(dataset
             summary_loss = tf.summary.scalar('loss', opt_apply)
         else:
             if memory_saving_gradients:
-                opt_grads = memory_saving_gradients.gradients(loss, train_vars)
+                opt_grads = msg.gradients(loss, train_vars)
             else:
                 opt_grads = tf.gradients(loss, train_vars)
             opt_grads = list(zip(opt_grads, train_vars))
