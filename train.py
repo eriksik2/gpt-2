@@ -317,4 +317,27 @@ def train(dataset
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    train(*vars(args).items())
+    train(dataset = args.dataset
+         ,model_name = args.model_name
+         ,combine = args.combine
+         ,batch_size = args.batch_size
+         ,learning_rate = args.learning_rate
+         ,accumulate_gradients = args.accumulate_gradients
+         ,memory_saving_gradients = args.memory_saving_gradients
+         ,only_train_transformer_layers = args.only_train_transformer_layers
+         ,optimizer = args.optimizer
+         ,noise = args.noise
+         ,top_k = args.top_k
+         ,top_p = args.top_p
+         ,restore_from = args.restore_from
+         ,run_name = args.run_name
+         ,sample_every = args.sample_every
+         ,sample_length = args.sample_length
+         ,sample_num = args.sample_num
+         ,save_every = args.save_every
+         ,val_dataset = args.val_dataset
+         ,val_batch_size = args.val_batch_size
+         ,val_batch_count = args.val_batch_count
+         ,val_every = args.val_every
+         ,checkpoint_dir = args.checkpoint_dir
+         ,sample_dir = args.sample_dir)
